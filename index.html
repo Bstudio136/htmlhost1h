@@ -45,10 +45,15 @@
             padding: 40px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             border: 1px solid var(--border);
+            position: relative;
+            z-index: 10;
         }
 
+        /* Header avec Logo et Langue */
         header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 30px;
         }
 
@@ -58,12 +63,40 @@
             background: linear-gradient(to right, var(--primary), #8b5cf6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
         }
 
         .subtitle {
             color: var(--text-muted);
             font-size: 0.95rem;
+            margin-top: 5px;
+        }
+
+        /* Sélecteur de Langue */
+        .lang-select {
+            display: flex;
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        .lang-btn:hover:not(.active) {
+            color: var(--text-main);
+            background: var(--surface-light);
         }
 
         .tabs {
@@ -297,19 +330,61 @@
             color: var(--text-muted);
             text-align: center;
         }
+
+        /* Footer Fixed */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.9); /* Semi-transparent dark */
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            z-index: 100;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+
+        .footer a:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        /* Padding bottom pour ne pas couvrir le contenu */
+        body {
+            padding-bottom: 80px;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
+        <!-- Header avec Logo et Langue -->
         <header>
-            <div class="logo">Flexweg</div>
-            <p class="subtitle">Publiez du HTML instantanément et partagez le lien.</p>
+            <div>
+                <div class="logo" id="t-logo">Flexweg</div>
+                <p class="subtitle" id="t-subtitle">Publiez du HTML instantanément et partagez le lien.</p>
+            </div>
+            <div class="lang-select">
+                <button class="lang-btn active" data-lang="fr" onclick="setLang('fr')">FR</button>
+                <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" data-lang="it" onclick="setLang('it')">IT</button>
+                <button class="lang-btn" data-lang="tr" onclick="setLang('tr')">TR</button>
+            </div>
         </header>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('code')">📝 Coller le code</button>
-            <button class="tab-btn" onclick="switchTab('file')">📂 Fichier HTML</button>
+            <button class="tab-btn active" id="btn-tab-code" onclick="switchTab('code')">📝 Coller le code</button>
+            <button class="tab-btn" id="btn-tab-file" onclick="switchTab('file')">📂 Fichier HTML</button>
         </div>
 
         <!-- Tab 1: Code Paste -->
@@ -326,8 +401,8 @@
         <div id="tab-file" class="tab-content">
             <div class="dropzone" id="dropzone">
                 <div class="dropzone-icon">⬆️</div>
-                <h3>Glissez votre fichier ici</h3>
-                <p>ou cliquez pour parcourir</p>
+                <h3 id="t-dz-title">Glissez votre fichier ici</h3>
+                <p id="t-dz-sub">ou cliquez pour parcourir</p>
                 <input type="file" id="fileInput" accept=".html,.htm">
             </div>
             <div class="file-name" id="fileNameDisplay">
@@ -339,33 +414,154 @@
 
         <button class="deploy-btn" id="deployBtn" onclick="deploy()">
             <div class="spinner"></div>
-            <span class="btn-text">🚀 Déployer sur Flexweg</span>
+            <span class="btn-text" id="t-deploy-btn">🚀 Déployer sur Flexweg</span>
         </button>
 
         <div class="result-box" id="resultBox">
             <div class="result-title" id="resultTitle"></div>
             <div class="result-url" id="resultUrl"></div>
             <div class="result-actions">
-                <button class="small-btn" onclick="copyLink()">📋 Copier le lien</button>
-                <button class="small-btn" onclick="window.open(document.getElementById('resultUrl').innerText, '_blank')">👁️ Ouvrir</button>
+                <button class="small-btn" id="btn-copy" onclick="copyLink()">📋 Copier le lien</button>
+                <button class="small-btn" id="btn-open" onclick="window.open(document.getElementById('resultUrl').innerText, '_blank')">👁️ Ouvrir</button>
             </div>
-            <div class="duration-note">⚠️ Ce lien expirera dans 60 minutes.</div>
+            <div class="duration-note" id="t-duration">⚠️ Ce lien expirera dans 60 minutes.</div>
         </div>
     </div>
 
-    <script>
-        const htmlInput = document.getElementById('htmlInput');
-        const fileInput = document.getElementById('fileInput');
-        const dropzone = document.getElementById('dropzone');
-        const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const fileLabel = document.getElementById('fileLabel');
-        const deployBtn = document.getElementById('deployBtn');
-        const resultBox = document.getElementById('resultBox');
-        const resultTitle = document.getElementById('resultTitle');
-        const resultUrl = document.getElementById('resultUrl');
+    <!-- Footer Fixed -->
+    <div class="footer">
+        <span id="t-footer">Développé par</span> <a href="https://bstudio136.github.io/mylink/" target="_blank">Bstudio136</a>
+    </div>
 
+    <script>
+        // --- TRADUCTIONS ---
+        const i18n = {
+            fr: {
+                logo: "Flexweg",
+                subtitle: "Publiez du HTML instantanément et partagez le lien.",
+                tab_code: "📝 Coller le code",
+                tab_file: "📂 Fichier HTML",
+                dz_title: "Glissez votre fichier ici",
+                dz_sub: "ou cliquez pour parcourir",
+                no_file: "Fichier non sélectionné",
+                deploy_btn: "🚀 Déployer sur Flexweg",
+                copy: "📋 Copier le lien",
+                open: "👁️ Ouvrir",
+                duration: "⚠️ Ce lien expirera dans 60 minutes.",
+                footer: "Développé par",
+                success: "✅ Déploiement réussi !",
+                error_title: "❌ Échec du déploiement",
+                msg_select_html: "Veuillez fournir du code HTML ou charger un fichier.",
+                msg_invalid_file: "Veuillez sélectionner un fichier HTML valide."
+            },
+            en: {
+                logo: "Flexweg",
+                subtitle: "Publish HTML instantly and share the link.",
+                tab_code: "📝 Paste code",
+                tab_file: "📂 HTML File",
+                dz_title: "Drag your file here",
+                dz_sub: "or click to browse",
+                no_file: "No file selected",
+                deploy_btn: "🚀 Deploy to Flexweg",
+                copy: "📋 Copy link",
+                open: "👁️ Open",
+                duration: "⚠️ This link will expire in 60 minutes.",
+                footer: "Developed by",
+                success: "✅ Deployment successful!",
+                error_title: "❌ Deployment failed",
+                msg_select_html: "Please provide HTML code or upload a file.",
+                msg_invalid_file: "Please select a valid HTML file."
+            },
+            it: {
+                logo: "Flexweg",
+                subtitle: "Pubblica HTML istantaneamente e condividi il link.",
+                tab_code: "📝 Incolla codice",
+                tab_file: "📂 File HTML",
+                dz_title: "Trascina il tuo file qui",
+                dz_sub: "o clicca per sfoglia",
+                no_file: "Nessun file selezionato",
+                deploy_btn: "🚀 Distribuisci su Flexweg",
+                copy: "📋 Copia link",
+                open: "👁️ Apri",
+                duration: "⚠️ Questo link scadrà tra 60 minuti.",
+                footer: "Sviluppato da",
+                success: "✅ Distribuzione riuscita!",
+                error_title: "❌ Fallimento distribuzione",
+                msg_select_html: "Fornire codice HTML o caricare un file.",
+                msg_invalid_file: "Selezionare un file HTML valido."
+            },
+            tr: {
+                logo: "Flexweg",
+                subtitle: "HTML'ı anında yayınlayın ve bağlantıyı paylaşın.",
+                tab_code: "📝 Kodu yapıştır",
+                tab_file: "📂 HTML Dosyası",
+                dz_title: "Dosyanızı buraya sürükleyin",
+                dz_sub: "veya gözden geçirmek için tıklayın",
+                no_file: "Dosya seçilmedi",
+                deploy_btn: "🚀 Flexweg'e Dağıt",
+                copy: "📋 Bağlantıyı Kopyala",
+                open: "👁️ Aç",
+                duration: "⚠️ Bu bağlantı 60 dakika içinde dolacak.",
+                footer: "Geliştirici",
+                success: "✅ Dağıtım başarılı!",
+                error_title: "❌ Dağıtım başarısız",
+                msg_select_html: "Lütfen HTML kodu sağlayın veya dosya yükleyin.",
+                msg_invalid_file: "Lütfen geçerli bir HTML dosyası seçin."
+            }
+        };
+
+        let currentLang = 'fr';
         let uploadedFileContent = null;
         let lastDeployedUrl = null;
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setLang('fr');
+        });
+
+        function setLang(lang) {
+            currentLang = lang;
+            const t = i18n[lang];
+            
+            // Update UI elements
+            document.getElementById('t-logo').innerText = t.logo;
+            document.getElementById('t-subtitle').innerText = t.subtitle;
+            document.getElementById('btn-tab-code').innerText = t.tab_code;
+            document.getElementById('btn-tab-file').innerText = t.tab_file;
+            document.getElementById('t-dz-title').innerText = t.dz_title;
+            document.getElementById('t-dz-sub').innerText = t.dz_sub;
+            document.getElementById('fileLabel').innerText = t.no_file;
+            document.getElementById('t-deploy-btn').innerText = t.deploy_btn;
+            document.getElementById('btn-copy').innerText = t.copy;
+            document.getElementById('btn-open').innerText = t.open;
+            document.getElementById('t-duration').innerText = t.duration;
+            document.getElementById('t-footer').innerText = t.footer;
+
+            // Update active button state
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.getAttribute('data-lang') === lang) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Update HTML lang attr for accessibility
+            document.documentElement.lang = lang;
+            
+            // Update result messages if currently visible
+            updateResultMessages();
+        }
+
+        function updateResultMessages() {
+            const t = i18n[currentLang];
+            const resultBox = document.getElementById('resultBox');
+            if (resultBox.className.includes('success')) {
+                document.getElementById('resultTitle').innerText = t.success;
+            } else if (resultBox.className.includes('error')) {
+                document.getElementById('resultTitle').innerText = t.error_title;
+            }
+        }
 
         // --- TABS LOGIC ---
         function switchTab(tabName) {
@@ -373,13 +569,24 @@
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             
             document.getElementById(`tab-${tabName}`).classList.add('active');
-            event.target.classList.add('active');
+            // Find the specific button that was clicked to activate it
+            // Since we have specific IDs, we can be precise
+            if(tabName === 'code') {
+                document.getElementById('btn-tab-code').classList.add('active');
+            } else {
+                document.getElementById('btn-tab-file').classList.add('active');
+            }
             
             // Reset result box when switching tabs
-            resultBox.className = 'result-box';
+            document.getElementById('resultBox').className = 'result-box';
         }
 
         // --- FILE HANDLING ---
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const fileLabel = document.getElementById('fileLabel');
+
         dropzone.addEventListener('click', () => fileInput.click());
 
         dropzone.addEventListener('dragover', (e) => {
@@ -408,7 +615,7 @@
 
         function processFile(file) {
             if (!file.name.toLowerCase().endsWith('.html') && !file.name.toLowerCase().endsWith('.htm')) {
-                alert('Veuillez sélectionner un fichier HTML valide.');
+                alert(i18n[currentLang].msg_invalid_file);
                 return;
             }
 
@@ -424,27 +631,31 @@
         function clearFile() {
             fileInput.value = '';
             uploadedFileContent = null;
-            fileLabel.textContent = 'Fichier non sélectionné';
+            fileLabel.textContent = i18n[currentLang].no_file;
             fileNameDisplay.style.display = 'none';
         }
 
         // --- DEPLOY LOGIC ---
         async function deploy() {
+            const t = i18n[currentLang];
             let contentToDeploy = '';
 
             // Determine source: File or Textarea
-            if (document.getElementById('tab-file').classList.contains('active') && uploadedFileContent) {
+            const fileTabActive = document.getElementById('tab-file').classList.contains('active');
+            if (fileTabActive && uploadedFileContent) {
                 contentToDeploy = uploadedFileContent;
             } else {
-                contentToDeploy = htmlInput.value.trim();
+                contentToDeploy = document.getElementById('htmlInput').value.trim();
             }
 
             if (!contentToDeploy) {
-                alert('Veuillez fournir du code HTML ou charger un fichier.');
+                alert(t.msg_select_html);
                 return;
             }
 
             // UI State
+            const deployBtn = document.getElementById('deployBtn');
+            const resultBox = document.getElementById('resultBox');
             deployBtn.disabled = true;
             deployBtn.classList.add('loading');
             resultBox.className = 'result-box'; // Hide result
@@ -460,27 +671,27 @@
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Erreur HTTP ${response.status}: ${errorText}`);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
                 }
 
                 const data = await response.json();
                 lastDeployedUrl = data.url;
 
                 if (!lastDeployedUrl) {
-                    throw new Error('Réponse du serveur invalide (URL manquante).');
+                    throw new Error('Réponse du serveur invalide');
                 }
 
                 // Success UI
                 resultBox.className = 'result-box success';
-                resultTitle.innerHTML = '✅ Déploiement réussi !';
-                resultUrl.textContent = lastDeployedUrl;
+                document.getElementById('resultTitle').innerText = t.success;
+                document.getElementById('resultUrl').textContent = lastDeployedUrl;
 
             } catch (error) {
                 console.error("Deployment Error:", error);
                 resultBox.className = 'result-box error';
-                resultTitle.innerHTML = '❌ Échec du déploiement';
-                resultUrl.textContent = error.message;
-                // Hide the copy/open buttons on error to avoid confusion
+                document.getElementById('resultTitle').innerText = t.error_title;
+                document.getElementById('resultUrl').textContent = error.message;
+                // Hide actions
                 document.querySelector('.result-actions').style.display = 'none';
             } finally {
                 deployBtn.disabled = false;
@@ -498,10 +709,10 @@
         function copyLink() {
             if (lastDeployedUrl) {
                 navigator.clipboard.writeText(lastDeployedUrl).then(() => {
-                    const btn = document.querySelector('.small-btn');
+                    const btn = document.getElementById('btn-copy');
                     const originalText = btn.innerText;
                     btn.innerText = '✅ Copié !';
-                    setTimeout(() => btn.innerText = originalText, 2000);
+                    setTimeout(() => btn.innerText = i18n[currentLang].copy, 2000);
                 }).catch(err => {
                     alert('Erreur lors de la copie.');
                 });
