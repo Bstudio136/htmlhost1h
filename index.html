@@ -205,6 +205,141 @@
             align-items: center;
         }
 
+        /* --- STYLES APERÇU --- */
+        .preview-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        .preview-toggle-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .preview-toggle-btn:hover {
+            background: var(--surface-light);
+            color: var(--text-main);
+            border-color: var(--text-muted);
+        }
+        
+        .preview-toggle-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .preview-section {
+            display: none; /* Masqué par défaut */
+            animation: fadeIn 0.3s ease;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .preview-title {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .fullscreen-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .fullscreen-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .preview-container {
+            position: relative;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .preview-frame {
+            width: 100%;
+            height: 400px;
+            border: none;
+            display: block;
+        }
+
+        /* Mode plein écran pour l'iframe */
+        .preview-container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            border-radius: 0;
+            border: none;
+            background: #fff;
+        }
+
+        .preview-container.fullscreen .preview-frame {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .preview-container.fullscreen .preview-header {
+            display: none; /* On cache la barre d'entête en plein écran pour voir la page réelle */
+        }
+
+        /* Barre de contrôle en plein écran */
+        .fullscreen-controls {
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10000;
+        }
+
+        .preview-container.fullscreen .fullscreen-controls {
+            display: flex;
+        }
+        
+        .close-fullscreen-btn {
+            background: rgba(0,0,0,0.7);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .close-fullscreen-btn:hover {
+            background: var(--error);
+        }
+        /* --- FIN STYLES APERÇU --- */
+
         /* Action Button */
         .deploy-btn {
             width: 100%;
@@ -389,12 +524,33 @@
 
         <!-- Tab 1: Code Paste -->
         <div id="tab-code" class="tab-content active">
-            <textarea id="htmlInput" placeholder="<!DOCTYPE html>
-<html>
-<body>
-  <h1>Bonjour</h1>
-</body>
-</html>"></textarea>
+            <textarea id="htmlInput" oninput="updateCodePreview()" placeholder="&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;body&gt;
+  &lt;h1&gt;Bonjour&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></textarea>
+            
+            <!-- CONTROLES APERÇU CODE -->
+            <div class="preview-controls">
+                <button class="preview-toggle-btn" id="toggleCodePreview" onclick="togglePreview('code')">
+                    <span id="t-toggle-preview">👁️ Aperçu</span> <small id="arrow-code" style="opacity:0.7">▶</small>
+                </button>
+            </div>
+
+            <!-- SECTION APERÇU CODE -->
+            <div class="preview-section" id="codePreviewSection">
+                <div class="preview-header">
+                    <span class="preview-title" id="t-preview-label">Prévisualisation</span>
+                    <button class="fullscreen-btn" id="btn-fs-code" onclick="toggleFullscreen('code')">⛶ Plein écran</button>
+                </div>
+                <div class="preview-container" id="previewContainerCode">
+                    <div class="fullscreen-controls">
+                        <button class="close-fullscreen-btn" id="btn-close-fs-code" onclick="toggleFullscreen('code')">✕ Fermer</button>
+                    </div>
+                    <iframe class="preview-frame" id="previewFrameCode" sandbox="allow-scripts" srcdoc="&lt;html&gt;&lt;body&gt;&lt;/body&gt;&lt;/html&gt;"></iframe>
+                </div>
+            </div>
         </div>
 
         <!-- Tab 2: File Upload -->
@@ -409,6 +565,27 @@
                 <span>📄</span>
                 <span id="fileLabel">Fichier non sélectionné</span>
                 <span onclick="clearFile()" style="cursor: pointer; color: var(--error);">✕</span>
+            </div>
+            
+            <!-- CONTROLES APERÇU FICHIER -->
+            <div class="preview-controls" id="filePreviewControls" style="display:none;">
+                <button class="preview-toggle-btn" id="toggleFilePreview" onclick="togglePreview('file')">
+                    <span id="t-toggle-preview-2">👁️ Aperçu</span> <small id="arrow-file" style="opacity:0.7">▶</small>
+                </button>
+            </div>
+
+            <!-- SECTION APERÇU FICHIER -->
+            <div class="preview-section" id="filePreviewSection">
+                <div class="preview-header">
+                    <span class="preview-title" id="t-preview-label-2">Prévisualisation</span>
+                    <button class="fullscreen-btn" id="btn-fs-file" onclick="toggleFullscreen('file')">⛶ Plein écran</button>
+                </div>
+                <div class="preview-container" id="previewContainerFile">
+                     <div class="fullscreen-controls">
+                        <button class="close-fullscreen-btn" id="btn-close-fs-file" onclick="toggleFullscreen('file')">✕ Fermer</button>
+                    </div>
+                    <iframe class="preview-frame" id="previewFrameFile" sandbox="allow-scripts" srcdoc="&lt;html&gt;&lt;body&gt;&lt;/body&gt;&lt;/html&gt;"></iframe>
+                </div>
             </div>
         </div>
 
@@ -452,7 +629,12 @@
                 success: "✅ Déploiement réussi !",
                 error_title: "❌ Échec du déploiement",
                 msg_select_html: "Veuillez fournir du code HTML ou charger un fichier.",
-                msg_invalid_file: "Veuillez sélectionner un fichier HTML valide."
+                msg_invalid_file: "Veuillez sélectionner un fichier HTML valide.",
+                preview: "👁️ Aperçu",
+                preview_label: "Prévisualisation",
+                fullscreen: "⛶ Plein écran",
+                close_fullscreen: "✕ Fermer",
+                empty_preview: "Aucun code HTML à afficher"
             },
             en: {
                 logo: "Flexweg",
@@ -470,7 +652,12 @@
                 success: "✅ Deployment successful!",
                 error_title: "❌ Deployment failed",
                 msg_select_html: "Please provide HTML code or upload a file.",
-                msg_invalid_file: "Please select a valid HTML file."
+                msg_invalid_file: "Please select a valid HTML file.",
+                preview: "👁️ Preview",
+                preview_label: "Preview",
+                fullscreen: "⛶ Fullscreen",
+                close_fullscreen: "✕ Close",
+                empty_preview: "No HTML code to display"
             },
             it: {
                 logo: "Flexweg",
@@ -488,7 +675,12 @@
                 success: "✅ Distribuzione riuscita!",
                 error_title: "❌ Fallimento distribuzione",
                 msg_select_html: "Fornire codice HTML o caricare un file.",
-                msg_invalid_file: "Selezionare un file HTML valido."
+                msg_invalid_file: "Selezionare un file HTML valido.",
+                preview: "👁️ Anteprima",
+                preview_label: "Anteprima",
+                fullscreen: "⛶ Schermo intero",
+                close_fullscreen: "✕ Chiudi",
+                empty_preview: "Nessun codice HTML da visualizzare"
             },
             tr: {
                 logo: "Flexweg",
@@ -506,13 +698,22 @@
                 success: "✅ Dağıtım başarılı!",
                 error_title: "❌ Dağıtım başarısız",
                 msg_select_html: "Lütfen HTML kodu sağlayın veya dosya yükleyin.",
-                msg_invalid_file: "Lütfen geçerli bir HTML dosyası seçin."
+                msg_invalid_file: "Lütfen geçerli bir HTML dosyası seçin.",
+                preview: "👁️ Önizleme",
+                preview_label: "Önizleme",
+                fullscreen: "⛶ Tam ekran",
+                close_fullscreen: "✕ Kapat",
+                empty_preview: "Gösterilecek HTML kodu yok"
             }
         };
 
         let currentLang = 'fr';
         let uploadedFileContent = null;
         let lastDeployedUrl = null;
+
+        // État des aperçus
+        let codePreviewVisible = false;
+        let filePreviewVisible = false;
 
         // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -536,6 +737,18 @@
             document.getElementById('btn-open').innerText = t.open;
             document.getElementById('t-duration').innerText = t.duration;
             document.getElementById('t-footer').innerText = t.footer;
+            
+            // Labels aperçu
+            document.getElementById('t-toggle-preview').innerText = t.preview;
+            document.getElementById('t-toggle-preview-2').innerText = t.preview;
+            document.getElementById('t-preview-label').innerText = t.preview_label;
+            document.getElementById('t-preview-label-2').innerText = t.preview_label;
+            
+            // Boutons plein écran
+            document.getElementById('btn-fs-code').innerText = t.fullscreen;
+            document.getElementById('btn-close-fs-code').innerText = t.close_fullscreen;
+            document.getElementById('btn-fs-file').innerText = t.fullscreen;
+            document.getElementById('btn-close-fs-file').innerText = t.close_fullscreen;
 
             // Update active button state
             document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -546,11 +759,12 @@
                 }
             });
 
-            // Update HTML lang attr for accessibility
             document.documentElement.lang = lang;
-            
-            // Update result messages if currently visible
             updateResultMessages();
+            
+            // Met à jour le contenu des aperçus s'ils sont ouverts
+            if (codePreviewVisible) updateCodePreviewContent();
+            if (filePreviewVisible) updateFilePreviewContent();
         }
 
         function updateResultMessages() {
@@ -569,16 +783,140 @@
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             
             document.getElementById(`tab-${tabName}`).classList.add('active');
-            // Find the specific button that was clicked to activate it
-            // Since we have specific IDs, we can be precise
+            
             if(tabName === 'code') {
                 document.getElementById('btn-tab-code').classList.add('active');
             } else {
                 document.getElementById('btn-tab-file').classList.add('active');
             }
             
-            // Reset result box when switching tabs
             document.getElementById('resultBox').className = 'result-box';
+            
+            // Réinitialiser l'état des aperçus quand on change d'onglet
+            codePreviewVisible = false;
+            filePreviewVisible = false;
+            document.getElementById('codePreviewSection').style.display = 'none';
+            document.getElementById('filePreviewSection').style.display = 'none';
+            document.getElementById('toggleCodePreview').classList.remove('active');
+            document.getElementById('toggleFilePreview').classList.remove('active');
+            document.getElementById('filePreviewControls').style.display = 'none';
+            
+            // Vider les iframes pour éviter les conflits
+            document.getElementById('previewFrameCode').srcdoc = "&lt;html&gt;&lt;body&gt;&lt;/body&gt;&lt;/html&gt;";
+            document.getElementById('previewFrameFile').srcdoc = "&lt;html&gt;&lt;body&gt;&lt;/body&gt;&lt;/html&gt;";
+        }
+
+        // --- LOGIQUE APERÇU ---
+        
+        function togglePreview(type) {
+            const t = i18n[currentLang];
+            if (type === 'code') {
+                const section = document.getElementById('codePreviewSection');
+                const btn = document.getElementById('toggleCodePreview');
+                const arrow = document.getElementById('arrow-code');
+                
+                codePreviewVisible = !codePreviewVisible;
+                
+                if (codePreviewVisible) {
+                    updateCodePreviewContent();
+                    section.style.display = 'block';
+                    btn.classList.add('active');
+                    arrow.innerText = '▼';
+                } else {
+                    section.style.display = 'none';
+                    btn.classList.remove('active');
+                    arrow.innerText = '▶';
+                }
+            } else if (type === 'file') {
+                const section = document.getElementById('filePreviewSection');
+                const btn = document.getElementById('toggleFilePreview');
+                const arrow = document.getElementById('arrow-file');
+                
+                filePreviewVisible = !filePreviewVisible;
+                
+                if (filePreviewVisible) {
+                    updateFilePreviewContent();
+                    section.style.display = 'block';
+                    btn.classList.add('active');
+                    arrow.innerText = '▼';
+                } else {
+                    section.style.display = 'none';
+                    btn.classList.remove('active');
+                    arrow.innerText = '▶';
+                }
+            }
+        }
+        
+        function updateCodePreviewContent() {
+            const t = i18n[currentLang];
+            const code = document.getElementById('htmlInput').value;
+            const iframe = document.getElementById('previewFrameCode');
+            if (code.trim()) {
+                iframe.srcdoc = code;
+            } else {
+                iframe.srcdoc = `<html><body style='color:#94a3b8;text-align:center;padding-top:50px;font-family:sans-serif'>&lt;p&gt;${t.empty_preview}&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;`;
+            }
+        }
+        
+        function updateFilePreviewContent() {
+            const t = i18n[currentLang];
+            const iframe = document.getElementById('previewFrameFile');
+            if (uploadedFileContent) {
+                iframe.srcdoc = uploadedFileContent;
+            } else {
+                iframe.srcdoc = `<html><body style='color:#94a3b8;text-align:center;padding-top:50px;font-family:sans-serif'>&lt;p&gt;${t.empty_preview}&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;`;
+            }
+        }
+
+        // Met à jour l'aperçu du code collé dans le textarea
+        function updateCodePreview() {
+            const code = document.getElementById('htmlInput').value;
+            
+            if (!code.trim()) {
+                 if (codePreviewVisible) {
+                     updateCodePreviewContent();
+                 }
+                 return;
+            }
+
+            // Si l'aperçu est ouvert, on le met à jour
+            if (codePreviewVisible) {
+                updateCodePreviewContent();
+            }
+        }
+
+        // Met à jour l'aperçu du fichier chargé
+        function updateFilePreview() {
+            const t = i18n[currentLang];
+            const controls = document.getElementById('filePreviewControls');
+            
+            if (!uploadedFileContent) {
+                filePreviewVisible = false;
+                document.getElementById('filePreviewSection').style.display = 'none';
+                document.getElementById('toggleFilePreview').classList.remove('active');
+                document.getElementById('arrow-file').innerText = '▶';
+                controls.style.display = 'none';
+                return;
+            }
+
+            controls.style.display = 'flex';
+            
+            // Si l'aperçu du fichier était déjà actif, on le met à jour
+            if (filePreviewVisible) {
+                updateFilePreviewContent();
+            }
+        }
+
+        // --- PLEIN ÉCRAN ---
+        function toggleFullscreen(type) {
+            const containerId = type === 'code' ? 'previewContainerCode' : 'previewContainerFile';
+            const container = document.getElementById(containerId);
+            
+            if (container.classList.contains('fullscreen')) {
+                container.classList.remove('fullscreen');
+            } else {
+                container.classList.add('fullscreen');
+            }
         }
 
         // --- FILE HANDLING ---
@@ -624,6 +962,9 @@
                 uploadedFileContent = e.target.result;
                 fileLabel.textContent = file.name;
                 fileNameDisplay.style.display = 'flex';
+                
+                // Met à jour l'aperçu du fichier
+                updateFilePreview();
             };
             reader.readAsText(file);
         }
@@ -633,6 +974,9 @@
             uploadedFileContent = null;
             fileLabel.textContent = i18n[currentLang].no_file;
             fileNameDisplay.style.display = 'none';
+            
+            // Réinitialise l'aperçu du fichier
+            updateFilePreview();
         }
 
         // --- DEPLOY LOGIC ---
@@ -710,7 +1054,6 @@
             if (lastDeployedUrl) {
                 navigator.clipboard.writeText(lastDeployedUrl).then(() => {
                     const btn = document.getElementById('btn-copy');
-                    const originalText = btn.innerText;
                     btn.innerText = '✅ Copié !';
                     setTimeout(() => btn.innerText = i18n[currentLang].copy, 2000);
                 }).catch(err => {
